@@ -5,8 +5,8 @@ import Lenis from 'lenis'
 
 gsap.registerPlugin(ScrollTrigger)
 
-const IMG_FRONT = './images/botella-frontal.jpg'
-const IMG_BACK = './images/botella-trasera.jpg'
+import IMG_FRONT from './botella-frontal.jpg'
+import IMG_BACK from './botella-trasera.jpg'
 
 function App() {
   const bottleRef = useRef(null)
