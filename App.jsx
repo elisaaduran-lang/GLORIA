@@ -15,191 +15,399 @@ function App() {
   const splitRight = useRef(null)
 
   useEffect(() => {
+    // Respeta las preferencias de accesibilidad del navegador
+    const reduceMotion = window.matchMedia(
+      '(prefers-reduced-motion: reduce)'
+    ).matches
+
+    /*
+      LENIS + GSAP
+      --------------------------------
+      En lugar de crear nuestro propio requestAnimationFrame,
+      dejamos que GSAP controle el ticker.
+    */
+
     const lenis = new Lenis({
-      duration: 1.15,
-      smoothWheel: true,
-      syncTouch: true,
+      duration: reduceMotion ? 0 : 1.05,
+      smoothWheel: !reduceMotion,
+      syncTouch: false,
+      autoRaf: false,
     })
 
-    let frame
+    const updateScroll = () => {
+      ScrollTrigger.update()
+    }
 
     const raf = (time) => {
       lenis.raf(time * 1000)
-      ScrollTrigger.update()
-      frame = requestAnimationFrame(raf)
     }
 
-    frame = requestAnimationFrame(raf)
+    lenis.on('scroll', updateScroll)
+    gsap.ticker.add(raf)
+
+    // Evita que GSAP acumule retrasos cuando hay muchos elementos
+    gsap.ticker.lagSmoothing(0)
 
     const ctx = gsap.context(() => {
+      /*
+        Si el usuario ha pedido reducir movimiento,
+        dejamos la página prácticamente estática.
+      */
+      if (reduceMotion) {
+        return
+      }
 
-      /* ---------------- HERO ---------------- */
+      /* =========================================
+         HERO
+      ========================================= */
 
-      gsap.from('.hero-kicker', {
-        y: 20,
-        opacity: 0,
-        duration: 1,
-        ease: 'power3.out',
+      const heroIntro = gsap.timeline({
+        defaults: {
+          ease: 'power3.out',
+        },
       })
 
-      gsap.from('.hero-title span', {
-        yPercent: 110,
-        opacity: 0,
-        duration: 1.35,
-        stagger: 0.08,
-        ease: 'power4.out',
-        delay: 0.15,
-      })
+      heroIntro
+        .from('.hero-kicker', {
+          y: 18,
+          opacity: 0,
+          duration: 0.8,
+        })
+        .from(
+          '.hero-title span',
+          {
+            yPercent: 105,
+            opacity: 0,
+            duration: 1.05,
+          },
+          '-=0.45'
+        )
+        .from(
+          '.hero-subtitle',
+          {
+            y: 18,
+            opacity: 0,
+            duration: 0.75,
+          },
+          '-=0.55'
+        )
+
+      /* Movimiento de botella durante el primer scroll */
 
       gsap.to(bottleRef.current, {
-        yPercent: -18,
-        rotate: -2,
-        scale: 1.05,
+        yPercent: -12,
+        rotate: -1.5,
+        scale: 1.035,
         ease: 'none',
+        force3D: true,
         scrollTrigger: {
           trigger: heroRef.current,
           start: 'top top',
           end: 'bottom top',
-          scrub: true,
+          scrub: 0.7,
         },
       })
 
       gsap.to('.hero-copy', {
-        yPercent: -35,
-        opacity: 0.15,
+        yPercent: -25,
+        opacity: 0.2,
         ease: 'none',
+        force3D: true,
         scrollTrigger: {
           trigger: heroRef.current,
           start: 'top top',
           end: 'bottom top',
-          scrub: true,
+          scrub: 0.7,
         },
       })
 
-
-      /* ---------------- HISTORIA ---------------- */
+      /* =========================================
+         HISTORIA
+      ========================================= */
 
       gsap.from('.story-line', {
-        y: 80,
+        y: 55,
         opacity: 0,
-        stagger: 0.18,
-        duration: 1,
+        stagger: 0.12,
+        duration: 0.8,
         ease: 'power3.out',
+        force3D: true,
         scrollTrigger: {
           trigger: '.story',
-          start: 'top 65%',
+          start: 'top 72%',
+          once: true,
         },
       })
 
+      gsap.from('.story-body', {
+        y: 35,
+        opacity: 0,
+        duration: 0.8,
+        delay: 0.15,
+        ease: 'power3.out',
+        force3D: true,
+        scrollTrigger: {
+          trigger: '.story-body',
+          start: 'top 78%',
+          once: true,
+        },
+      })
 
-      /* ---------------- SEPARACIÓN ---------------- */
+      /* =========================================
+         SEPARACIÓN
+         
+         Antes teníamos dos ScrollTriggers
+         independientes haciendo pin sobre la misma
+         escena. Ahora usamos UN SOLO timeline.
+      ========================================= */
 
-      gsap.to(splitLeft.current, {
-        xPercent: -95,
-        rotate: -4,
-        ease: 'none',
+      const separationTimeline = gsap.timeline({
         scrollTrigger: {
           trigger: '.separation',
           start: 'top top',
-          end: '+=100%',
-          scrub: true,
+          end: '+=90%',
+          scrub: 0.65,
           pin: true,
+          anticipatePin: 1,
+          invalidateOnRefresh: true,
         },
       })
 
-      gsap.to(splitRight.current, {
-        xPercent: 95,
-        rotate: 4,
-        ease: 'none',
-        scrollTrigger: {
-          trigger: '.separation',
-          start: 'top top',
-          end: '+=100%',
-          scrub: true,
-          pin: true,
-        },
-      })
+      separationTimeline
+        .to(
+          splitLeft.current,
+          {
+            xPercent: -88,
+            rotate: -3,
+            force3D: true,
+            ease: 'none',
+            duration: 1,
+          },
+          0
+        )
+        .to(
+          splitRight.current,
+          {
+            xPercent: 88,
+            rotate: 3,
+            force3D: true,
+            ease: 'none',
+            duration: 1,
+          },
+          0
+        )
+        .to(
+          '.separation-center',
+          {
+            scale: 0.94,
+            opacity: 0.9,
+            force3D: true,
+            ease: 'none',
+            duration: 1,
+          },
+          0
+        )
 
-
-      /* ---------------- NUESTRA VERSIÓN ---------------- */
+      /* =========================================
+         NUESTRA VERSIÓN
+      ========================================= */
 
       gsap.from('.turn-line', {
-        y: 80,
+        y: 55,
         opacity: 0,
-        duration: 1.1,
-        stagger: 0.12,
+        stagger: 0.1,
+        duration: 0.85,
         ease: 'power3.out',
+        force3D: true,
         scrollTrigger: {
           trigger: '.turn',
-          start: 'top 62%',
+          start: 'top 68%',
+          once: true,
         },
       })
 
+      gsap.from('.turn-description, .turn-final', {
+        y: 30,
+        opacity: 0,
+        duration: 0.8,
+        stagger: 0.12,
+        ease: 'power3.out',
+        force3D: true,
+        scrollTrigger: {
+          trigger: '.turn-description',
+          start: 'top 78%',
+          once: true,
+        },
+      })
 
-      /* ---------------- ISMA + MARCE ---------------- */
+      /* =========================================
+         ISMA + MARCE = GLÓRIA
+      ========================================= */
 
       gsap.from('.equation-item', {
-        y: 50,
+        y: 35,
         opacity: 0,
-        stagger: 0.18,
-        duration: 0.9,
+        stagger: 0.12,
+        duration: 0.7,
         ease: 'power3.out',
+        force3D: true,
         scrollTrigger: {
           trigger: '.equation',
-          start: 'top 70%',
+          start: 'top 72%',
+          once: true,
         },
       })
 
+      /* =========================================
+         PRODUCTO
+      ========================================= */
 
-      /* ---------------- PRODUCTO ---------------- */
-
-      gsap.from('.product-image', {
-        scale: 0.86,
+      gsap.from('.product-copy', {
+        y: 35,
         opacity: 0,
-        rotate: 2,
-        duration: 1.2,
+        duration: 0.8,
         ease: 'power3.out',
+        force3D: true,
         scrollTrigger: {
           trigger: '.product',
-          start: 'top 65%',
+          start: 'top 72%',
+          once: true,
         },
       })
 
+      gsap.from('.product-image', {
+        y: 45,
+        opacity: 0,
+        scale: 0.94,
+        duration: 1,
+        ease: 'power3.out',
+        force3D: true,
+        scrollTrigger: {
+          trigger: '.product',
+          start: 'top 68%',
+          once: true,
+        },
+      })
 
-      /* ---------------- ORIGEN ---------------- */
+      /* =========================================
+         ORIGEN
+      ========================================= */
 
       gsap.from('.origin-word', {
-        yPercent: 100,
+        yPercent: 70,
         opacity: 0,
         stagger: 0.08,
-        duration: 1.1,
-        ease: 'power4.out',
+        duration: 0.9,
+        ease: 'power3.out',
+        force3D: true,
         scrollTrigger: {
           trigger: '.origin',
-          start: 'top 70%',
+          start: 'top 72%',
+          once: true,
         },
       })
 
+      gsap.from('.origin-copy, .origin-details', {
+        y: 30,
+        opacity: 0,
+        stagger: 0.1,
+        duration: 0.75,
+        ease: 'power3.out',
+        force3D: true,
+        scrollTrigger: {
+          trigger: '.origin-copy',
+          start: 'top 80%',
+          once: true,
+        },
+      })
 
-      /* ---------------- FINAL ---------------- */
+      /* =========================================
+         ETIQUETA
+      ========================================= */
+
+      gsap.from('.label-card', {
+        y: 40,
+        opacity: 0,
+        scale: 0.96,
+        duration: 0.9,
+        ease: 'power3.out',
+        force3D: true,
+        scrollTrigger: {
+          trigger: '.label-story',
+          start: 'top 70%',
+          once: true,
+        },
+      })
+
+      gsap.from('.label-text', {
+        y: 35,
+        opacity: 0,
+        duration: 0.8,
+        ease: 'power3.out',
+        force3D: true,
+        scrollTrigger: {
+          trigger: '.label-text',
+          start: 'top 75%',
+          once: true,
+        },
+      })
+
+      /* =========================================
+         FINAL
+      ========================================= */
 
       gsap.from('.final-title span', {
-        yPercent: 100,
+        yPercent: 80,
         opacity: 0,
-        duration: 1.2,
-        stagger: 0.1,
+        duration: 0.9,
+        stagger: 0.08,
         ease: 'power4.out',
+        force3D: true,
         scrollTrigger: {
           trigger: '.final',
-          start: 'top 65%',
+          start: 'top 68%',
+          once: true,
         },
       })
 
+      gsap.from('.final-message, .final-brand, .final-meta', {
+        y: 30,
+        opacity: 0,
+        duration: 0.8,
+        stagger: 0.1,
+        ease: 'power3.out',
+        force3D: true,
+        scrollTrigger: {
+          trigger: '.final-message',
+          start: 'top 82%',
+          once: true,
+        },
+      })
     })
 
+    /*
+      Actualizamos ScrollTrigger después de cargar
+      las imágenes para que las posiciones sean correctas.
+    */
+
+    const refresh = () => {
+      ScrollTrigger.refresh()
+    }
+
+    window.addEventListener('load', refresh)
+
+    // Un pequeño refresh después del montaje
+    const refreshTimer = window.setTimeout(refresh, 300)
+
     return () => {
-      cancelAnimationFrame(frame)
+      window.removeEventListener('load', refresh)
+      window.clearTimeout(refreshTimer)
+
+      gsap.ticker.remove(raf)
+
+      lenis.off('scroll', updateScroll)
       lenis.destroy()
+
       ctx.revert()
     }
   }, [])
@@ -244,6 +452,8 @@ function App() {
           <img
             src={IMG_FRONT}
             alt="Botella de Glória"
+            decoding="async"
+            fetchPriority="high"
           />
         </div>
 
@@ -273,7 +483,6 @@ function App() {
           <p className="story-line huge">
             FUIMOS UNO.
           </p>
-
 
           <div className="story-body">
 
@@ -312,11 +521,9 @@ function App() {
               `linear-gradient(rgba(74,41,28,.2), rgba(74,41,28,.2)), url("${IMG_FRONT}")`,
           }}
         >
-
           <div className="split-inner">
             <span>UNA MITAD</span>
           </div>
-
         </div>
 
 
@@ -328,11 +535,9 @@ function App() {
               `linear-gradient(rgba(74,41,28,.2), rgba(74,41,28,.2)), url("${IMG_BACK}")`,
           }}
         >
-
           <div className="split-inner">
             <span>OTRA MITAD</span>
           </div>
-
         </div>
 
 
@@ -366,7 +571,6 @@ function App() {
           02 / NUESTRA VERSIÓN
         </div>
 
-
         <div className="turn-content">
 
           <p className="turn-line">
@@ -377,18 +581,15 @@ function App() {
             PREFERIMOS OTRA VERSIÓN.
           </p>
 
-
           <p className="turn-description">
             No siempre encontramos nuestra otra
             mitad para completarnos.
           </p>
 
-
           <p className="turn-final">
             A veces la encontramos para{' '}
             <em>crear algo nuevo.</em>
           </p>
-
 
           <div className="principio">
             ESTO SOLO ES EL PRINCIPIO.
@@ -406,7 +607,6 @@ function App() {
         <div className="section-label">
           03 / DE UN DIBUJO A ALGO MÁS GRANDE
         </div>
-
 
         <div className="equation-grid">
 
@@ -479,11 +679,9 @@ function App() {
             04 / EL PRODUCTO
           </div>
 
-
           <p className="product-kicker">
             GLÓRIA
           </p>
-
 
           <h2>
             ANÍS
@@ -491,13 +689,11 @@ function App() {
             CON MOSTO.
           </h2>
 
-
           <p className="product-description">
             Mezcla tradicional de anís y mosto
             de uva extremeña. Dulce, aromática
             y con carácter.
           </p>
-
 
           <div className="specs">
 
@@ -527,6 +723,8 @@ function App() {
             className="product-image"
             src={IMG_FRONT}
             alt="Glória"
+            loading="lazy"
+            decoding="async"
           />
 
         </div>
@@ -546,13 +744,11 @@ function App() {
           }}
         />
 
-
         <div className="origin-content">
 
           <div className="section-label">
             05 / EL ORIGEN
           </div>
-
 
           <p className="origin-word">
             TRASIERRA
@@ -562,12 +758,10 @@ function App() {
             EXTREMADURA
           </p>
 
-
           <p className="origin-copy">
             Una bebida nacida del territorio,
             del mosto y del anís.
           </p>
-
 
           <div className="origin-details">
 
@@ -598,7 +792,6 @@ function App() {
           06 / LA ETIQUETA
         </div>
 
-
         <div className="label-grid">
 
           <div className="label-card">
@@ -606,6 +799,8 @@ function App() {
             <img
               src={IMG_FRONT}
               alt="Etiqueta frontal de Glória"
+              loading="lazy"
+              decoding="async"
             />
 
           </div>
@@ -617,13 +812,11 @@ function App() {
               UNA HISTORIA
             </p>
 
-
             <h2>
               DIBUJADA
               <br />
               A MANO.
             </h2>
-
 
             <p>
               Una idea se convierte en una
@@ -650,7 +843,6 @@ function App() {
             07 / EL PRINCIPIO
           </p>
 
-
           <h2 className="final-title">
 
             <span>
@@ -667,17 +859,14 @@ function App() {
 
           </h2>
 
-
           <p className="final-message">
             Se trata de encontrarnos para crear
             algo nuevo.
           </p>
 
-
           <div className="final-brand">
             GLÓRIA
           </div>
-
 
           <div className="final-meta">
             É O NO · ORIGEN 01 · TRASIERRA · EXTREMADURA
