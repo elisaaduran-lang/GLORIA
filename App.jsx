@@ -9,23 +9,14 @@ import IMG_BACK from './botella-trasera.jpg'
 gsap.registerPlugin(ScrollTrigger)
 
 function App() {
-  const bottleRef = useRef(null)
   const heroRef = useRef(null)
   const splitLeft = useRef(null)
   const splitRight = useRef(null)
 
   useEffect(() => {
-    // Respeta las preferencias de accesibilidad del navegador
     const reduceMotion = window.matchMedia(
       '(prefers-reduced-motion: reduce)'
     ).matches
-
-    /*
-      LENIS + GSAP
-      --------------------------------
-      En lugar de crear nuestro propio requestAnimationFrame,
-      dejamos que GSAP controle el ticker.
-    */
 
     const lenis = new Lenis({
       duration: reduceMotion ? 0 : 1.05,
@@ -45,17 +36,10 @@ function App() {
     lenis.on('scroll', updateScroll)
     gsap.ticker.add(raf)
 
-    // Evita que GSAP acumule retrasos cuando hay muchos elementos
     gsap.ticker.lagSmoothing(0)
 
     const ctx = gsap.context(() => {
-      /*
-        Si el usuario ha pedido reducir movimiento,
-        dejamos la página prácticamente estática.
-      */
-      if (reduceMotion) {
-        return
-      }
+      if (reduceMotion) return
 
       /* =========================================
          HERO
@@ -92,25 +76,14 @@ function App() {
           '-=0.55'
         )
 
-      /* Movimiento de botella durante el primer scroll */
-
-      gsap.to(bottleRef.current, {
-        yPercent: -12,
-        rotate: -1.5,
-        scale: 1.035,
-        ease: 'none',
-        force3D: true,
-        scrollTrigger: {
-          trigger: heroRef.current,
-          start: 'top top',
-          end: 'bottom top',
-          scrub: 0.7,
-        },
-      })
+      /*
+        El texto del Hero se desplaza ligeramente
+        al comenzar el scroll.
+      */
 
       gsap.to('.hero-copy', {
-        yPercent: -25,
-        opacity: 0.2,
+        yPercent: -22,
+        opacity: 0.25,
         ease: 'none',
         force3D: true,
         scrollTrigger: {
@@ -155,10 +128,6 @@ function App() {
 
       /* =========================================
          SEPARACIÓN
-         
-         Antes teníamos dos ScrollTriggers
-         independientes haciendo pin sobre la misma
-         escena. Ahora usamos UN SOLO timeline.
       ========================================= */
 
       const separationTimeline = gsap.timeline({
@@ -385,18 +354,12 @@ function App() {
       })
     })
 
-    /*
-      Actualizamos ScrollTrigger después de cargar
-      las imágenes para que las posiciones sean correctas.
-    */
-
     const refresh = () => {
       ScrollTrigger.refresh()
     }
 
     window.addEventListener('load', refresh)
 
-    // Un pequeño refresh después del montaje
     const refreshTimer = window.setTimeout(refresh, 300)
 
     return () => {
@@ -415,7 +378,9 @@ function App() {
   return (
     <main>
 
-      {/* NAV */}
+      {/* =========================================
+          NAV
+      ========================================= */}
 
       <nav className="nav">
         <span>É O NO</span>
@@ -424,7 +389,9 @@ function App() {
       </nav>
 
 
-      {/* HERO */}
+      {/* =========================================
+          HERO
+      ========================================= */}
 
       <section className="hero" ref={heroRef}>
 
@@ -444,20 +411,6 @@ function App() {
 
         </div>
 
-
-        <div
-          className="hero-bottle"
-          ref={bottleRef}
-        >
-          <img
-            src={IMG_FRONT}
-            alt="Botella de Glória"
-            decoding="async"
-            fetchPriority="high"
-          />
-        </div>
-
-
         <div className="scroll-note">
           <span>SCROLL</span>
           <span className="scroll-line" />
@@ -466,7 +419,9 @@ function App() {
       </section>
 
 
-      {/* HISTORIA */}
+      {/* =========================================
+          HISTORIA
+      ========================================= */}
 
       <section className="story section">
 
@@ -509,7 +464,9 @@ function App() {
       </section>
 
 
-      {/* SEPARACIÓN */}
+      {/* =========================================
+          SEPARACIÓN
+      ========================================= */}
 
       <section className="separation">
 
@@ -526,7 +483,6 @@ function App() {
           </div>
         </div>
 
-
         <div
           className="split split-right"
           ref={splitRight}
@@ -539,7 +495,6 @@ function App() {
             <span>OTRA MITAD</span>
           </div>
         </div>
-
 
         <div className="separation-center">
 
@@ -563,7 +518,9 @@ function App() {
       </section>
 
 
-      {/* NUESTRA VERSIÓN */}
+      {/* =========================================
+          NUESTRA VERSIÓN
+      ========================================= */}
 
       <section className="turn section">
 
@@ -600,7 +557,9 @@ function App() {
       </section>
 
 
-      {/* ISMA + MARCE */}
+      {/* =========================================
+          ISMA + MARCE
+      ========================================= */}
 
       <section className="equation section">
 
@@ -624,11 +583,9 @@ function App() {
 
           </div>
 
-
           <div className="equation-symbol equation-item">
             +
           </div>
-
 
           <div className="equation-item">
 
@@ -644,11 +601,9 @@ function App() {
 
           </div>
 
-
           <div className="equation-symbol equation-item">
             =
           </div>
-
 
           <div className="equation-item gloria-eq">
 
@@ -669,7 +624,9 @@ function App() {
       </section>
 
 
-      {/* PRODUCTO */}
+      {/* =========================================
+          PRODUCTO
+      ========================================= */}
 
       <section className="product section">
 
@@ -716,7 +673,6 @@ function App() {
 
         </div>
 
-
         <div className="product-visual">
 
           <img
@@ -732,7 +688,9 @@ function App() {
       </section>
 
 
-      {/* ORIGEN */}
+      {/* =========================================
+          ORIGEN
+      ========================================= */}
 
       <section className="origin">
 
@@ -784,7 +742,9 @@ function App() {
       </section>
 
 
-      {/* ETIQUETA */}
+      {/* =========================================
+          ETIQUETA
+      ========================================= */}
 
       <section className="label-story section">
 
@@ -804,7 +764,6 @@ function App() {
             />
 
           </div>
-
 
           <div className="label-text">
 
@@ -833,7 +792,9 @@ function App() {
       </section>
 
 
-      {/* FINAL */}
+      {/* =========================================
+          FINAL
+      ========================================= */}
 
       <section className="final section">
 
